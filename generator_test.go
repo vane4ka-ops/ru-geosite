@@ -60,3 +60,55 @@ func TestValidateGeoSiteListRejectsCorruption(t *testing.T) {
 		t.Fatal("corrupt data unexpectedly accepted")
 	}
 }
+
+func TestDecodeDomainAcceptsSupportedTypes(t *testing.T) {
+	// Literal protobuf bytes keep these expectations independent of our encoder.
+	for _, typ := range []byte{2, 3} {
+		data := append([]byte{0x08, typ, 0x12, 0x06}, []byte("vk.com")...)
+		got, err := decodeDomain(data)
+		if err != nil {
+			t.Fatalf("type %d: %v", typ, err)
+		}
+		want := domainEntry{typ: int(typ), value: "vk.com"}
+		if got != want {
+			t.Fatalf("got %#v, want %#v", got, want)
+		}
+	}
+	// Protobuf permits value before type; validation must not depend on order.
+	data := append([]byte{0x12, 0x06}, []byte("vk.com")...)
+	data = append(data, 0x08, 0x02)
+	if _, err := decodeDomain(data); err != nil {
+		t.Fatalf("value before type: %v", err)
+	}
+}
+
+func TestValidateGeoSiteListRejectsInvalidDomains(t *testing.T) {
+	tests := []struct {
+		name string
+		data []byte
+	}{
+		{"missing type", append([]byte{0x12, 0x06}, []byte("vk.com")...)},
+		{"explicit plain", append([]byte{0x08, 0x00, 0x12, 0x06}, []byte("vk.com")...)},
+		{"regex", append([]byte{0x08, 0x01, 0x12, 0x06}, []byte("vk.com")...)},
+		{"unknown type", append([]byte{0x08, 0x04, 0x12, 0x06}, []byte("vk.com")...)},
+		{"duplicate type", append([]byte{0x08, 0x02, 0x08, 0x03, 0x12, 0x06}, []byte("vk.com")...)},
+		{"missing value", []byte{0x08, 0x02}},
+		{"empty value", []byte{0x08, 0x02, 0x12, 0x00}},
+		{"invalid domain", append([]byte{0x08, 0x02, 0x12, 0x07}, []byte("vk..com")...)},
+		{"invalid UTF-8", []byte{0x08, 0x02, 0x12, 0x03, 0xff, '.', 'a'}},
+		{"duplicate value", append(append([]byte{0x08, 0x02, 0x12, 0x06}, []byte("vk.com")...), 0x12, 0x00)},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Exercise the same validation path as the -check CLI command, with
+			// both required categories present to isolate the malformed entry.
+			data := encodeGeoSiteList([][]byte{
+				encodeGeoSite("DIRECT", [][]byte{tt.data}),
+				encodeGeoSite("PROXY", [][]byte{encodeDomain(domainTypeFull, "proxy.example")}),
+			})
+			if err := validateGeoSiteList(data, geoSiteTags); err == nil {
+				t.Fatal("invalid domain unexpectedly accepted")
+			}
+		})
+	}
+}

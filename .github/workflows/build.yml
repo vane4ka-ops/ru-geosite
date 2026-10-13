@@ -13,6 +13,13 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  codeql:
+    name: CodeQL
+    permissions:
+      contents: read
+      security-events: write
+    uses: ./.github/workflows/codeql.yml
+
   verify:
     name: Validate and test
     runs-on: ubuntu-24.04
@@ -36,7 +43,8 @@ jobs:
           mkdir -p site
           go run . -out site/custom.dat
           go run . -check site/custom.dat
-          sha256sum site/custom.dat > site/custom.dat.sha256
+          (cd site && sha256sum custom.dat > custom.dat.sha256)
+          (cd site && sha256sum --check custom.dat.sha256)
           touch site/.nojekyll
       - name: Upload Pages artifact
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -47,7 +55,7 @@ jobs:
   deploy:
     name: Deploy GitHub Pages
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: verify
+    needs: [verify, codeql]
     runs-on: ubuntu-24.04
     permissions:
       pages: write

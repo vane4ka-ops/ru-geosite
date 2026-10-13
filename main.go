@@ -330,6 +330,7 @@ func decodeGeoSite(data []byte) (string, []domainEntry, error) {
 
 func decodeDomain(data []byte) (domainEntry, error) {
 	entry := domainEntry{typ: domainTypePlain}
+	seenType := false
 	seenValue := false
 	for len(data) > 0 {
 		field, wire, rest, err := takeField(data)
@@ -338,11 +339,14 @@ func decodeDomain(data []byte) (domainEntry, error) {
 		}
 		switch {
 		case field == 1 && wire == 0:
+			if seenType {
+				return domainEntry{}, errors.New("duplicate domain type")
+			}
 			value, remaining, err := takeVarint(rest)
 			if err != nil || (value != domainTypeDomain && value != domainTypeFull) {
 				return domainEntry{}, errors.New("invalid domain type")
 			}
-			entry.typ, data = int(value), remaining
+			entry.typ, seenType, data = int(value), true, remaining
 		case field == 2 && wire == 2:
 			value, remaining, err := takeBytes(rest)
 			if err != nil || seenValue {
@@ -353,8 +357,14 @@ func decodeDomain(data []byte) (domainEntry, error) {
 			return domainEntry{}, errors.New("invalid domain field")
 		}
 	}
+	if !seenType {
+		return domainEntry{}, errors.New("domain without a type")
+	}
 	if !seenValue {
 		return domainEntry{}, errors.New("domain without a value")
+	}
+	if err := validateDomain(entry.value); err != nil {
+		return domainEntry{}, fmt.Errorf("invalid domain value: %w", err)
 	}
 	return entry, nil
 }
