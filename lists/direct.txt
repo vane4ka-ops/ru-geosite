@@ -4,9 +4,6 @@
 # regex:   — regexp
 # no prefix — same as domain:
 
-# google
-www.google.com
-
 #drive2
 drive2.ru
 d-cd.net
@@ -92,10 +89,8 @@ grandtrain.ru
 gu-st.ru
 hh.ru
 hrlink.ru
-ifconfig.me
 imgsmail.ru
 itogisg.ru
-itunes.apple.com
 ivi.ru
 iz.ru
 izbirkom.ru

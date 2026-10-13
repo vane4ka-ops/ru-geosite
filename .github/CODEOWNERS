@@ -1,0 +1,4 @@
+# Routing rules and the publishing path require the repository owner's review.
+/lists/ @vane4ka-ops
+/main.go @vane4ka-ops
+/.github/workflows/ @vane4ka-ops

@@ -1,0 +1,29 @@
+name: CodeQL
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: Analyze Go
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@cf12ceefebab2c867b9c35d7f907e059681d37ab # v3
+        with:
+          languages: go
+          build-mode: autobuild
+      - name: Analyze
+        uses: github/codeql-action/analyze@cf12ceefebab2c867b9c35d7f907e059681d37ab # v3
