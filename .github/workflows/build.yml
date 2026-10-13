@@ -47,14 +47,14 @@ jobs:
           (cd site && sha256sum --check custom.dat.sha256)
           touch site/.nojekyll
       - name: Upload Pages artifact
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: github.repository == 'vane4ka-ops/ru-geosite' && github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
         with:
           path: site
 
   deploy:
     name: Deploy GitHub Pages
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.repository == 'vane4ka-ops/ru-geosite' && github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: [verify, codeql]
     runs-on: ubuntu-24.04
     permissions:

@@ -1,4 +1,2 @@
-# Routing rules and the publishing path require the repository owner's review.
-/lists/ @vane4ka-ops
-/main.go @vane4ka-ops
-/.github/workflows/ @vane4ka-ops
+# The owner is responsible for all source, tests, lists and CI configuration.
+* @vane4ka-ops
